@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Value Shapes Practice - Blur Trainer v5</title>
+<title>Value Shapes Practice - Blur Trainer v6</title>
 <style>
 :root{
   --bg:#f5f3ef;--panel:#fff;--ink:#222;--muted:#666;--line:#d8d4cc;
@@ -40,8 +40,15 @@ textarea{min-height:72px;resize:vertical}
 .muted{color:var(--muted)}.small{font-size:.86rem}.section-title{margin:0 0 8px;font-size:1.05rem}
 .app-note{padding:12px;border-radius:10px;background:#f8f7f3;border:1px solid var(--line)}
 .crop-stage{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#f7f7f5}
-.canvas-wrap{position:relative;background:#e9e7e1;min-height:280px;display:flex;align-items:center;justify-content:center}
-#cropCanvas{width:100%;max-height:70vh;display:block;touch-action:none;background:#ddd}
+.crop-workspace{position:relative;background:#292929;min-height:280px;max-height:70vh;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#cropImage{display:none;max-width:100%;max-height:70vh;width:auto;height:auto;object-fit:contain;pointer-events:none;-webkit-user-drag:none}
+#cropEmpty{color:#d8d8d8;padding:36px;text-align:center;line-height:1.45}
+#cropBox{position:absolute;display:none;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.48);cursor:move;touch-action:none}
+.crop-handle{position:absolute;width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid #22334a;box-shadow:0 1px 5px rgba(0,0,0,.35);touch-action:none}
+.crop-handle[data-handle="nw"]{left:0;top:0;transform:translate(-50%,-50%);cursor:nwse-resize}
+.crop-handle[data-handle="ne"]{right:0;top:0;transform:translate(50%,-50%);cursor:nesw-resize}
+.crop-handle[data-handle="sw"]{left:0;bottom:0;transform:translate(-50%,50%);cursor:nesw-resize}
+.crop-handle[data-handle="se"]{right:0;bottom:0;transform:translate(50%,50%);cursor:nwse-resize}
 .crop-note{padding:10px 12px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem}
 .source-meta{line-height:1.5}
 .sliders{display:grid;gap:10px;margin-top:12px}
@@ -52,9 +59,9 @@ input[type="range"]{width:100%}
 .preview-card{border:1px solid var(--line);border-radius:12px;background:#f8f7f4;padding:10px}
 .preview-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px;color:var(--muted);font-size:.86rem}
 .preview-head strong{color:var(--ink)}
-.preview-image-button{display:block;padding:0;border:0;background:#fff;border-radius:10px;overflow:hidden;width:100%;cursor:pointer}
+.preview-image-button{display:block;padding:0;border:0;background:#fff;border-radius:10px;overflow:hidden;width:100%;cursor:pointer;touch-action:manipulation}
 .preview-image-button img{width:100%;max-height:420px;object-fit:contain;display:block;background:#fff}
-.preview-hint{margin-top:8px;text-align:center;color:var(--muted);font-size:.83rem}
+.preview-hint{margin-top:8px;text-align:center;color:var(--muted);font-size:.83rem;font-weight:650}
 .empty{padding:36px 18px;border:1px dashed var(--line);border-radius:12px;text-align:center;color:var(--muted);background:#faf9f7}
 details{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
 summary{cursor:pointer;font-weight:700}
@@ -65,24 +72,23 @@ summary{cursor:pointer;font-weight:700}
 #dragOverlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(34,51,74,.88);color:#fff;align-items:center;justify-content:center;font-size:1.5rem;font-weight:750;pointer-events:none}
 #dragOverlay.show{display:flex}
 #printArea{display:none}
-#viewer{position:fixed;inset:0;background:rgba(0,0,0,.84);z-index:10000;color:#fff;display:none;align-items:center;justify-content:center;padding:16px}
-#viewer.show{display:flex}
-.viewer-shell{position:relative;width:min(100%,1100px);height:min(100%,96vh);display:flex;flex-direction:column;gap:10px}
-.viewer-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.viewer-title{font-size:.95rem;font-weight:700}
-.viewer-top button{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.25)}
-.viewer-main{flex:1;min-height:0;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
-.viewer-nav{width:48px;height:48px;border-radius:999px;font-size:1.25rem}
-.viewer-frame{position:relative;min-width:0;min-height:0;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.16);border-radius:16px;overflow:hidden}
-#viewerImage{max-width:100%;max-height:100%;object-fit:contain;display:block;background:#fff;touch-action:pan-y}
-.viewer-bottom{display:flex;justify-content:center;align-items:center;gap:16px;color:#ddd;font-size:.9rem;flex-wrap:wrap}
-.viewer-stage{font-weight:700;color:#fff}
-.viewer-note{color:#cfcfcf;font-size:.84rem}
+#viewer{position:fixed;inset:0;background:#080808;z-index:10000;color:#fff;display:none;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
+#viewer.show{display:block}
+.viewer-shell{position:relative;width:100%;height:100dvh;max-height:100%;display:flex;flex-direction:column;gap:8px}
+.viewer-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:46px;z-index:3}
+.viewer-title{font-size:.98rem;font-weight:700;white-space:nowrap}
+.viewer-actions{display:flex;gap:8px;align-items:center}
+.viewer-top button{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.25);min-height:42px}
+.viewer-main{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:pan-y}
+.viewer-frame{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:pan-y}
+#viewerImage{max-width:100%;max-height:100%;object-fit:contain;display:block;background:#fff;touch-action:pan-y;-webkit-user-drag:none;user-select:none}
+.viewer-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:4;width:52px;height:52px;border-radius:999px;font-size:1.35rem;background:rgba(0,0,0,.42);color:#fff;border:1px solid rgba(255,255,255,.35)}
+#viewerPrevBtn{left:8px}#viewerNextBtn{right:8px}
+.viewer-bottom{min-height:42px;display:flex;justify-content:center;align-items:center;gap:12px;color:#ddd;font-size:.9rem;flex-wrap:wrap;z-index:3}
+.viewer-stage{font-weight:700;color:#fff}.viewer-note{color:#cfcfcf;font-size:.84rem}
+.viewer-dots{display:flex;gap:7px;align-items:center;justify-content:center}
+.viewer-dot{width:9px;height:9px;border-radius:50%;background:#666;border:0;padding:0;min-width:0}.viewer-dot.active{background:#fff}
 @media(max-width:900px){.grid-2,.guide{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}.preview-grid{grid-template-columns:1fr}}
-@media(max-width:720px){
-  .viewer-main{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}
-  .viewer-nav{width:100%;height:auto;border-radius:12px;padding:10px 14px}
-}
 @media print{
  html,body{background:#fff!important}
  body>#dragOverlay,body>#viewer,body>main{display:none!important}
@@ -101,8 +107,8 @@ summary{cursor:pointer;font-weight:700}
 <body>
 <div id="dragOverlay">Drop image anywhere</div>
 <main>
-<h1>Value Shapes Practice <span style="font-size:.5em;color:#777;font-weight:600;vertical-align:middle;">Blur Trainer v5</span></h1>
-<p class="sub">Load one image, crop it if you want, generate a blur progression, then either preview full-screen on iPad or print one stage per page. This version fixes the crop tool, the blur preview, and adds a tap-to-view stage browser.</p>
+<h1>Value Shapes Practice <span style="font-size:.5em;color:#777;font-weight:600;vertical-align:middle;">Blur Trainer v6</span></h1>
+<p class="sub">Load one image, crop it if you want, generate a blur progression, then tap any stage to use the iPad as a full-screen reference viewer. Swipe left or right to move through the blur sequence. Printing / PDF remains available too.</p>
 
 <section class="panel">
   <div id="dropZone" class="drop-zone">
@@ -122,8 +128,17 @@ summary{cursor:pointer;font-weight:700}
   <div>
     <h2 class="section-title">1) Crop (optional)</h2>
     <div class="crop-stage">
-      <div class="canvas-wrap"><canvas id="cropCanvas" width="900" height="640"></canvas></div>
-      <div class="crop-note">Drag to make a crop. Then drag inside the selected box to move it, or drag a white corner handle to resize it. If you do nothing, the full image is used.</div>
+      <div id="cropWorkspace" class="crop-workspace">
+        <div id="cropEmpty">Add an image to crop it here.</div>
+        <img id="cropImage" alt="Image being cropped" />
+        <div id="cropBox" aria-label="Crop selection">
+          <div class="crop-handle" data-handle="nw"></div>
+          <div class="crop-handle" data-handle="ne"></div>
+          <div class="crop-handle" data-handle="sw"></div>
+          <div class="crop-handle" data-handle="se"></div>
+        </div>
+      </div>
+      <div class="crop-note">Drag on the image to make a crop. Drag inside the box to move it. Drag any white corner to resize it. The actual image always stays visible.</div>
     </div>
     <div class="row" style="margin-top:10px">
       <button id="resetCropBtn" type="button" disabled>Use full image</button>
@@ -175,10 +190,10 @@ summary{cursor:pointer;font-weight:700}
 
 <section class="panel">
 <div class="row space" style="margin-bottom:12px">
-  <h2 class="section-title" style="margin:0">3) Preview and print</h2>
+  <h2 class="section-title" style="margin:0">3) Preview / full-screen reference</h2>
   <div class="row"><button id="regenerateBtn" type="button" disabled>Regenerate</button><button id="printBtn" class="primary" type="button" disabled>Print / Save as PDF</button></div>
 </div>
-<div id="previewGrid" class="preview-grid"><div class="empty">Add an image to create the blur sequence.</div></div>
+<div class="small muted" style="margin-bottom:10px">Tap any image to open it full-screen. On iPad, swipe left/right to move through the stages.</div><div id="previewGrid" class="preview-grid"><div class="empty">Add an image to create the blur sequence.</div></div>
 <div id="status" class="small muted" style="margin-top:10px"></div>
 </section>
 
@@ -216,20 +231,21 @@ summary{cursor:pointer;font-weight:700}
 <div id="viewer" aria-hidden="true">
   <div class="viewer-shell">
     <div class="viewer-top">
-      <div class="viewer-title">Blur stage viewer</div>
-      <button id="viewerCloseBtn" type="button">Close</button>
-    </div>
-    <div class="viewer-main">
-      <button id="viewerPrevBtn" class="viewer-nav" type="button" aria-label="Previous stage">◀</button>
-      <div class="viewer-frame">
-        <img id="viewerImage" alt="Current blur stage" />
+      <div id="viewerStageText" class="viewer-title">Stage 1 of 4</div>
+      <div class="viewer-actions">
+        <button id="viewerPrintBtn" type="button">Print / Save PDF</button>
+        <button id="viewerCloseBtn" type="button">Close</button>
       </div>
-      <button id="viewerNextBtn" class="viewer-nav" type="button" aria-label="Next stage">▶</button>
+    </div>
+    <div id="viewerMain" class="viewer-main">
+      <div class="viewer-frame"><img id="viewerImage" alt="Current blur stage" /></div>
+      <button id="viewerPrevBtn" class="viewer-nav" type="button" aria-label="Previous stage">&#9664;</button>
+      <button id="viewerNextBtn" class="viewer-nav" type="button" aria-label="Next stage">&#9654;</button>
     </div>
     <div class="viewer-bottom">
-      <div id="viewerStageText" class="viewer-stage">Stage 1</div>
       <div id="viewerBlurText">0% blur</div>
-      <div class="viewer-note">Swipe left or right, or use the arrows.</div>
+      <div id="viewerDots" class="viewer-dots" aria-label="Stages"></div>
+      <div class="viewer-note">Swipe left or right for the next reference.</div>
     </div>
   </div>
 </div>
@@ -242,14 +258,14 @@ summary{cursor:pointer;font-weight:700}
 const $=id=>document.getElementById(id);
 const els={
  fileInput:$('fileInput'),clearBtn:$('clearBtn'),dropZone:$('dropZone'),dragOverlay:$('dragOverlay'),
- cropCanvas:$('cropCanvas'),resetCropBtn:$('resetCropBtn'),centerCropBtn:$('centerCropBtn'),
+ cropWorkspace:$('cropWorkspace'),cropImage:$('cropImage'),cropEmpty:$('cropEmpty'),cropBox:$('cropBox'),resetCropBtn:$('resetCropBtn'),centerCropBtn:$('centerCropBtn'),
  sourceName:$('sourceName'),sourceMeta:$('sourceMeta'),stageCount:$('stageCount'),preset:$('preset'),appearance:$('appearance'),
  orientation:$('orientation'),sharpFinal:$('sharpFinal'),sliders:$('sliders'),previewGrid:$('previewGrid'),regenerateBtn:$('regenerateBtn'),
  printBtn:$('printBtn'),status:$('status'),printArea:$('printArea'),pageStyle:$('pageStyle'),promptType:$('promptType'),
  ownPrompt:$('ownPrompt'),randomPromptBtn:$('randomPromptBtn'),copyPromptBtn:$('copyPromptBtn'),useOwnPromptBtn:$('useOwnPromptBtn'),
  searchPexelsLink:$('searchPexelsLink'),promptText:$('promptText'),
- viewer:$('viewer'),viewerImage:$('viewerImage'),viewerCloseBtn:$('viewerCloseBtn'),viewerPrevBtn:$('viewerPrevBtn'),viewerNextBtn:$('viewerNextBtn'),
- viewerStageText:$('viewerStageText'),viewerBlurText:$('viewerBlurText')
+ viewer:$('viewer'),viewerMain:$('viewerMain'),viewerImage:$('viewerImage'),viewerCloseBtn:$('viewerCloseBtn'),viewerPrintBtn:$('viewerPrintBtn'),viewerPrevBtn:$('viewerPrevBtn'),viewerNextBtn:$('viewerNextBtn'),
+ viewerStageText:$('viewerStageText'),viewerBlurText:$('viewerBlurText'),viewerDots:$('viewerDots')
 };
 
 const promptBanks={
@@ -292,7 +308,7 @@ const presets={
 
 const state={
  sourceFile:null,sourceURL:null,sourceImg:null,stageURLs:[],renderVersion:0,basePreviewURL:null,
- cropNatural:null,drawingCrop:false,dragStart:null,displayImageRect:null,cropMode:'new',cropOriginal:null,cropHandle:null,
+ cropNatural:null,drawingCrop:false,cropStartNat:null,cropMode:'new',cropOriginal:null,cropHandle:null,cropPointerId:null,
  viewerIndex:0,viewerTouchStartX:null
 };
 
@@ -320,7 +336,8 @@ function applyPreset(){if(els.preset.value==='custom')return;buildSliders(preset
 
 function clearAll(){
  state.renderVersion++;revokeStages();if(state.sourceURL)URL.revokeObjectURL(state.sourceURL);
- Object.assign(state,{sourceFile:null,sourceURL:null,sourceImg:null,cropNatural:null,cropOriginal:null,cropHandle:null,viewerIndex:0,basePreviewURL:null});
+ Object.assign(state,{sourceFile:null,sourceURL:null,sourceImg:null,cropNatural:null,cropOriginal:null,cropHandle:null,cropStartNat:null,cropPointerId:null,viewerIndex:0,basePreviewURL:null});
+ els.cropImage.removeAttribute('src');els.cropImage.style.display='none';els.cropEmpty.style.display='block';els.cropBox.style.display='none';
  els.sourceName.innerHTML='<strong>No image loaded yet</strong>';els.sourceMeta.textContent='Once you add an image, details appear here.';
  els.previewGrid.innerHTML='<div class="empty">Add an image to create the blur sequence.</div>';els.printArea.innerHTML='';els.fileInput.value='';
  [els.clearBtn,els.regenerateBtn,els.printBtn,els.resetCropBtn,els.centerCropBtn].forEach(b=>b.disabled=true);
@@ -334,10 +351,11 @@ function handleFile(file){
  const img=new Image();
  img.onload=()=>{
   state.sourceImg=img;state.cropNatural=null;state.cropOriginal=null;state.cropHandle=null;
+  els.cropImage.src=state.sourceURL;els.cropImage.style.display='block';els.cropEmpty.style.display='none';
   els.sourceName.innerHTML=`<strong>${esc(file.name||'Pasted image')}</strong>`;
   els.sourceMeta.textContent=`${img.naturalWidth} × ${img.naturalHeight} px`;
   [els.clearBtn,els.regenerateBtn,els.printBtn,els.resetCropBtn,els.centerCropBtn].forEach(b=>b.disabled=false);
-  orient();drawCrop();generate();
+  orient();requestAnimationFrame(()=>{syncCropBox();generate();});
  };
  img.onerror=()=>setStatus('This image could not be read.');
  img.src=state.sourceURL;
@@ -353,66 +371,74 @@ function centeredCrop(){
  const i=state.sourceImg;if(!i)return null;const ix=i.naturalWidth*.08,iy=i.naturalHeight*.08;
  return{x:Math.round(ix),y:Math.round(iy),w:Math.round(i.naturalWidth-2*ix),h:Math.round(i.naturalHeight-2*iy)};
 }
-function drawCrop(){
- const c=els.cropCanvas,ctx=c.getContext('2d'),w=c.clientWidth||900,h=Math.min(innerHeight*.62,640),dpr=devicePixelRatio||1;
- c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);ctx.setTransform(1,0,0,1,0,0);ctx.scale(dpr,dpr);ctx.fillStyle='#efede6';ctx.fillRect(0,0,w,h);state.displayImageRect=null;
- if(!state.sourceImg){ctx.fillStyle='#777';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='16px system-ui';ctx.fillText('Add an image to preview and crop it here.',w/2,h/2);return;}
- const i=state.sourceImg,p=14,s=Math.min((w-2*p)/i.naturalWidth,(h-2*p)/i.naturalHeight),dw=i.naturalWidth*s,dh=i.naturalHeight*s,dx=(w-dw)/2,dy=(h-dh)/2;
- state.displayImageRect={x:dx,y:dy,w:dw,h:dh,scale:s};ctx.drawImage(i,dx,dy,dw,dh);
- if(state.cropNatural){
-  const cr=state.cropNatural,rx=dx+cr.x*s,ry=dy+cr.y*s,rw=cr.w*s,rh=cr.h*s;
-  ctx.save();ctx.fillStyle='rgba(0,0,0,.42)';ctx.fillRect(dx,dy,dw,dh);ctx.restore();
-  ctx.drawImage(i,cr.x,cr.y,cr.w,cr.h,rx,ry,rw,rh);
-  ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.strokeRect(rx,ry,rw,rh);
-  const hs=16;ctx.fillStyle='#fff';ctx.strokeStyle='#22334a';ctx.lineWidth=2;
-  [[rx,ry],[rx+rw,ry],[rx,ry+rh],[rx+rw,ry+rh]].forEach(([hx,hy])=>{ctx.beginPath();ctx.arc(hx,hy,hs/2,0,Math.PI*2);ctx.fill();ctx.stroke();});
- }
+function imageRect(){
+ if(!state.sourceImg)return null;
+ const ir=els.cropImage.getBoundingClientRect(),wr=els.cropWorkspace.getBoundingClientRect();
+ if(!ir.width||!ir.height)return null;
+ return{left:ir.left-wr.left,top:ir.top-wr.top,width:ir.width,height:ir.height,clientLeft:ir.left,clientTop:ir.top};
 }
-function point(evt){const r=els.cropCanvas.getBoundingClientRect(),src=evt.touches?evt.touches[0]:evt;return{x:src.clientX-r.left,y:src.clientY-r.top};}
-function clamp(p){const r=state.displayImageRect;if(!r)return p;return{x:Math.max(r.x,Math.min(r.x+r.w,p.x)),y:Math.max(r.y,Math.min(r.y+r.h,p.y))};}
-function nat(a,b){const r=state.displayImageRect,x1=Math.min(a.x,b.x),y1=Math.min(a.y,b.y),x2=Math.max(a.x,b.x),y2=Math.max(a.y,b.y);if(x2-x1<12||y2-y1<12)return null;return{x:Math.round((x1-r.x)/r.scale),y:Math.round((y1-r.y)/r.scale),w:Math.round((x2-x1)/r.scale),h:Math.round((y2-y1)/r.scale)};}
-function cropDisplayRect(){
- if(!state.cropNatural||!state.displayImageRect)return null;
- const r=state.displayImageRect,c=state.cropNatural,s=r.scale;
- return{x:r.x+c.x*s,y:r.y+c.y*s,w:c.w*s,h:c.h*s};
+function eventNatural(e){
+ const ir=els.cropImage.getBoundingClientRect(),i=state.sourceImg;
+ if(!i||!ir.width||!ir.height)return null;
+ const x=Math.max(0,Math.min(i.naturalWidth,(e.clientX-ir.left)*i.naturalWidth/ir.width));
+ const y=Math.max(0,Math.min(i.naturalHeight,(e.clientY-ir.top)*i.naturalHeight/ir.height));
+ return{x,y};
+}
+function syncCropBox(){
+ if(!state.sourceImg||!state.cropNatural){els.cropBox.style.display='none';return;}
+ const r=imageRect();if(!r)return;
+ const c=state.cropNatural,i=state.sourceImg;
+ const sx=r.width/i.naturalWidth,sy=r.height/i.naturalHeight;
+ els.cropBox.style.display='block';
+ els.cropBox.style.left=`${r.left+c.x*sx}px`;
+ els.cropBox.style.top=`${r.top+c.y*sy}px`;
+ els.cropBox.style.width=`${Math.max(2,c.w*sx)}px`;
+ els.cropBox.style.height=`${Math.max(2,c.h*sy)}px`;
+}
+function normalizedCrop(a,b){
+ const i=state.sourceImg;if(!i)return null;
+ const x1=Math.max(0,Math.min(a.x,b.x)),y1=Math.max(0,Math.min(a.y,b.y));
+ const x2=Math.min(i.naturalWidth,Math.max(a.x,b.x)),y2=Math.min(i.naturalHeight,Math.max(a.y,b.y));
+ if(x2-x1<8||y2-y1<8)return null;
+ return{x:Math.round(x1),y:Math.round(y1),w:Math.round(x2-x1),h:Math.round(y2-y1)};
 }
 function cropStart(e){
- if(!state.sourceImg||!state.displayImageRect)return;
+ if(!state.sourceImg)return;
+ const n=eventNatural(e);if(!n)return;
  e.preventDefault();
- const p=clamp(point(e)),cr=cropDisplayRect(),hit=24;
- state.drawingCrop=true;state.dragStart=p;state.cropOriginal=state.cropNatural?{...state.cropNatural}:null;
+ state.drawingCrop=true;state.cropPointerId=e.pointerId;state.cropStartNat=n;state.cropOriginal=state.cropNatural?{...state.cropNatural}:null;
  state.cropMode='new';state.cropHandle=null;
- if(cr){
-  const corners={nw:[cr.x,cr.y],ne:[cr.x+cr.w,cr.y],sw:[cr.x,cr.y+cr.h],se:[cr.x+cr.w,cr.y+cr.h]};
-  for(const [name,[cx,cy]] of Object.entries(corners)){
-    if(Math.hypot(p.x-cx,p.y-cy)<=hit){state.cropMode='resize';state.cropHandle=name;return;}
-  }
-  if(p.x>=cr.x&&p.x<=cr.x+cr.w&&p.y>=cr.y&&p.y<=cr.y+cr.h){state.cropMode='move';return;}
- }
+ const handle=e.target.closest('.crop-handle');
+ if(handle&&state.cropOriginal){state.cropMode='resize';state.cropHandle=handle.dataset.handle;}
+ else if((e.target===els.cropBox||els.cropBox.contains(e.target))&&state.cropOriginal){state.cropMode='move';}
+ else{state.cropNatural={x:Math.round(n.x),y:Math.round(n.y),w:1,h:1};}
+ try{els.cropWorkspace.setPointerCapture(e.pointerId);}catch(_){ }
+ syncCropBox();
 }
 function cropMove(e){
- if(!state.drawingCrop)return;
- e.preventDefault();
- const p=clamp(point(e)),r=state.displayImageRect;
+ if(!state.drawingCrop||e.pointerId!==state.cropPointerId)return;
+ const n=eventNatural(e);if(!n)return;e.preventDefault();
+ const i=state.sourceImg,o=state.cropOriginal,s=state.cropStartNat;
  if(state.cropMode==='new'){
-   state.cropNatural=nat(state.dragStart,p);
- }else if(state.cropMode==='move'&&state.cropOriginal){
-   const dx=(p.x-state.dragStart.x)/r.scale,dy=(p.y-state.dragStart.y)/r.scale,o=state.cropOriginal;
-   const maxX=state.sourceImg.naturalWidth-o.w,maxY=state.sourceImg.naturalHeight-o.h;
-   state.cropNatural={x:Math.round(Math.max(0,Math.min(maxX,o.x+dx))),y:Math.round(Math.max(0,Math.min(maxY,o.y+dy))),w:o.w,h:o.h};
- }else if(state.cropMode==='resize'&&state.cropOriginal){
-   const o=state.cropOriginal;
-   const ox=r.x+o.x*r.scale,oy=r.y+o.y*r.scale,orx=ox+o.w*r.scale,oby=oy+o.h*r.scale;
-   let a,b;
-   if(state.cropHandle==='nw'){a=p;b={x:orx,y:oby};}
-   if(state.cropHandle==='ne'){a={x:ox,y:p.y};b={x:p.x,y:oby};}
-   if(state.cropHandle==='sw'){a={x:p.x,y:oy};b={x:orx,y:p.y};}
-   if(state.cropHandle==='se'){a={x:ox,y:oy};b=p;}
-   const n=nat(clamp(a),clamp(b));if(n)state.cropNatural=n;
+   const c=normalizedCrop(s,n);if(c)state.cropNatural=c;
+ }else if(state.cropMode==='move'&&o){
+   const dx=n.x-s.x,dy=n.y-s.y;
+   state.cropNatural={x:Math.round(Math.max(0,Math.min(i.naturalWidth-o.w,o.x+dx))),y:Math.round(Math.max(0,Math.min(i.naturalHeight-o.h,o.y+dy))),w:o.w,h:o.h};
+ }else if(state.cropMode==='resize'&&o){
+   const fixed={
+     nw:{x:o.x+o.w,y:o.y+o.h},ne:{x:o.x,y:o.y+o.h},sw:{x:o.x+o.w,y:o.y},se:{x:o.x,y:o.y}
+   }[state.cropHandle];
+   const c=normalizedCrop(fixed,n);if(c)state.cropNatural=c;
  }
- orient();drawCrop();
+ syncCropBox();orient();
 }
-function cropEnd(e){if(!state.drawingCrop)return;if(e)e.preventDefault();state.drawingCrop=false;state.dragStart=null;state.cropOriginal=null;state.cropHandle=null;generate();}
+function cropEnd(e){
+ if(!state.drawingCrop||e.pointerId!==state.cropPointerId)return;
+ e.preventDefault();
+ state.drawingCrop=false;state.cropPointerId=null;state.cropStartNat=null;state.cropOriginal=null;state.cropHandle=null;
+ if(state.cropNatural&&(state.cropNatural.w<8||state.cropNatural.h<8))state.cropNatural=null;
+ syncCropBox();orient();generate();
+}
 
 function baseCanvas(){
  const i=state.sourceImg,maxLong=4096,cr=state.cropNatural||{x:0,y:0,w:i.naturalWidth,h:i.naturalHeight},s=Math.min(1,maxLong/Math.max(cr.w,cr.h)),w=Math.max(1,Math.round(cr.w*s)),h=Math.max(1,Math.round(cr.h*s));
@@ -433,7 +459,7 @@ function preview(v){
  els.previewGrid.innerHTML='';
  state.stageURLs.forEach((u,i)=>{
   const d=document.createElement('div');d.className='preview-card';
-  d.innerHTML=`<div class="preview-head"><strong>Stage ${i+1}</strong><span>${Math.round(v[i])}% blur</span></div><button class="preview-image-button" type="button" data-index="${i}" aria-label="Open Stage ${i+1} full screen"><img src="${u}" alt="Stage ${i+1}" style="${imageStyle(v[i])}"></button><div class="preview-hint">Tap to view full-screen</div>`;
+  d.innerHTML=`<div class="preview-head"><strong>Stage ${i+1}</strong><span>${Math.round(v[i])}% blur</span></div><button class="preview-image-button" type="button" data-index="${i}" aria-label="Open Stage ${i+1} full screen"><img src="${u}" alt="Stage ${i+1}" style="${imageStyle(v[i])}"></button><div class="preview-hint">Tap for full-screen reference · then swipe</div>`;
   d.querySelector('.preview-image-button').addEventListener('click',()=>openViewer(i));
   els.previewGrid.appendChild(d);
  });
@@ -450,6 +476,8 @@ function refreshViewer(){
  els.viewerImage.style.cssText=imageStyle(v[i]);
  els.viewerStageText.textContent=`Stage ${i+1} of ${state.stageURLs.length}`;
  els.viewerBlurText.textContent=`${Math.round(v[i])}% blur`;
+ els.viewerDots.innerHTML='';
+ state.stageURLs.forEach((_,idx)=>{const b=document.createElement('button');b.type='button';b.className='viewer-dot'+(idx===i?' active':'');b.setAttribute('aria-label',`Go to stage ${idx+1}`);b.onclick=()=>{state.viewerIndex=idx;refreshViewer();};els.viewerDots.appendChild(b);});
 }
 function openViewer(i){
  if(!state.stageURLs.length)return;
@@ -484,8 +512,8 @@ function randomPrompt(){
 
 els.fileInput.onchange=e=>handleFile(e.target.files[0]);
 els.clearBtn.onclick=clearAll;
-els.resetCropBtn.onclick=()=>{state.cropNatural=null;drawCrop();orient();generate();};
-els.centerCropBtn.onclick=()=>{state.cropNatural=centeredCrop();drawCrop();orient();generate();};
+els.resetCropBtn.onclick=()=>{state.cropNatural=null;syncCropBox();orient();generate();};
+els.centerCropBtn.onclick=()=>{state.cropNatural=centeredCrop();syncCropBox();orient();generate();};
 els.stageCount.onchange=()=>{buildSliders();schedule();};
 els.preset.onchange=applyPreset;
 els.appearance.onchange=schedule;
@@ -504,6 +532,7 @@ els.promptType.onchange=randomPrompt;
 els.searchPexelsLink.addEventListener('click',updatePexelsLink);
 
 els.viewerCloseBtn.onclick=closeViewer;
+els.viewerPrintBtn.onclick=()=>window.print();
 els.viewerPrevBtn.onclick=()=>viewerStep(-1);
 els.viewerNextBtn.onclick=()=>viewerStep(1);
 els.viewer.addEventListener('click',e=>{if(e.target===els.viewer)closeViewer();});
@@ -513,23 +542,27 @@ document.addEventListener('keydown',e=>{
  if(e.key==='ArrowLeft')viewerStep(-1);
  if(e.key==='ArrowRight')viewerStep(1);
 });
-els.viewerImage.addEventListener('touchstart',e=>{state.viewerTouchStartX=e.changedTouches[0].clientX;},{passive:true});
-els.viewerImage.addEventListener('touchend',e=>{
+els.viewerMain.addEventListener('pointerdown',e=>{state.viewerTouchStartX=e.clientX;},{passive:true});
+els.viewerMain.addEventListener('pointerup',e=>{
  if(state.viewerTouchStartX==null)return;
- const dx=e.changedTouches[0].clientX-state.viewerTouchStartX;
- if(Math.abs(dx)>35){viewerStep(dx<0?1:-1);}state.viewerTouchStartX=null;
-},{passive:true});
+ const dx=e.clientX-state.viewerTouchStartX;
+ if(Math.abs(dx)>38)viewerStep(dx<0?1:-1);
+ state.viewerTouchStartX=null;
+});
 
 document.addEventListener('paste',e=>{const item=[...(e.clipboardData?.items||[])].find(i=>i.type?.startsWith('image/'));if(item){const f=item.getAsFile();if(f){handleFile(f);e.preventDefault();}}});
 document.addEventListener('dragover',e=>{e.preventDefault();els.dragOverlay.classList.add('show');});
 document.addEventListener('dragleave',e=>{if(e.target===document.documentElement||e.target===document.body)els.dragOverlay.classList.remove('show');});
 document.addEventListener('drop',e=>{e.preventDefault();els.dragOverlay.classList.remove('show');const f=[...e.dataTransfer.files].find(f=>f.type.startsWith('image/'));if(f)handleFile(f);});
 
-els.cropCanvas.addEventListener('mousedown',cropStart);window.addEventListener('mousemove',cropMove);window.addEventListener('mouseup',cropEnd);
-els.cropCanvas.addEventListener('touchstart',cropStart,{passive:false});window.addEventListener('touchmove',cropMove,{passive:false});window.addEventListener('touchend',cropEnd,{passive:false});
-window.addEventListener('resize',drawCrop);
+els.cropWorkspace.addEventListener('pointerdown',cropStart);
+els.cropWorkspace.addEventListener('pointermove',cropMove);
+els.cropWorkspace.addEventListener('pointerup',cropEnd);
+els.cropWorkspace.addEventListener('pointercancel',cropEnd);
+els.cropImage.addEventListener('load',()=>requestAnimationFrame(syncCropBox));
+window.addEventListener('resize',()=>requestAnimationFrame(syncCropBox));
 
-buildSliders();drawCrop();randomPrompt();
+buildSliders();randomPrompt();
 })();
 </script>
 </body>
