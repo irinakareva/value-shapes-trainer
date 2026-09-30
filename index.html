@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Value Shapes Practice - Blur Trainer v3</title>
+<style>
+:root{
+  --bg:#f5f3ef;--panel:#fff;--ink:#222;--muted:#666;--line:#d8d4cc;
+  --accent:#22334a;--soft:#eef2f7;--pagew:8.5in;--pageh:11in;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:1200px;margin:0 auto;padding:24px 18px 64px}
+h1{margin:0 0 8px;font-size:2rem;letter-spacing:-.02em}
+.sub{margin:0 0 24px;color:var(--muted);line-height:1.55;max-width:940px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin:0 0 18px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.space{justify-content:space-between}
+.grid-2{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
+.grid-4{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:14px}
+.drop-zone{border:2px dashed #aca79d;border-radius:14px;background:#fbfaf8;padding:28px 18px;text-align:center;transition:.15s ease}
+.drop-zone.active{background:var(--soft);border-color:var(--accent)}
+.drop-zone strong{display:block;font-size:1.08rem;margin-bottom:6px}
+.drop-zone small{color:var(--muted);display:block;line-height:1.4}
+button,input,select,textarea{font:inherit}
+button,.button-link{border:1px solid var(--line);border-radius:12px;padding:11px 14px;background:#fff;color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+button:hover,.button-link:hover{background:#f3f2ef}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+button.primary:hover{filter:brightness(1.06)}
+button:disabled{opacity:.45;cursor:default}
+.big-actions button,.big-actions .button-link{min-width:150px;min-height:48px}
+.primary-file{background:var(--accent);color:#fff;border-color:var(--accent)}
+.primary-file:hover{filter:brightness(1.06);background:var(--accent)}
+.native-file-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+label.field{display:flex;flex-direction:column;gap:6px;font-size:.92rem;font-weight:650}
+label.field .help{color:var(--muted);font-size:.78rem;font-weight:400;line-height:1.35}
+select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+textarea{min-height:72px;resize:vertical}
+.checkline{display:flex;align-items:center;gap:8px;margin-top:10px}
+.muted{color:var(--muted)}.small{font-size:.86rem}.section-title{margin:0 0 8px;font-size:1.05rem}
+.app-note{padding:12px;border-radius:10px;background:#f8f7f3;border:1px solid var(--line)}
+.crop-stage{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#f7f7f5}
+.canvas-wrap{position:relative;background:#e9e7e1;min-height:280px;display:flex;align-items:center;justify-content:center}
+#cropCanvas{width:100%;max-height:70vh;display:block;touch-action:none;background:#ddd}
+.crop-note{padding:10px 12px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem}
+.source-meta{line-height:1.5}
+.sliders{display:grid;gap:10px;margin-top:12px}
+.slider-row{display:grid;grid-template-columns:90px 1fr 110px;gap:10px;align-items:center}
+.slider-row .label{font-weight:700}.slider-row .readout{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+input[type="range"]{width:100%}
+.preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.preview-card{border:1px solid var(--line);border-radius:12px;background:#f8f7f4;padding:10px}
+.preview-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px;color:var(--muted);font-size:.86rem}
+.preview-head strong{color:var(--ink)}
+.preview-card img{width:100%;max-height:420px;object-fit:contain;display:block;background:#fff}
+.empty{padding:36px 18px;border:1px dashed var(--line);border-radius:12px;text-align:center;color:var(--muted);background:#faf9f7}
+details{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+summary{cursor:pointer;font-weight:700}
+.guide{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px}
+.guide ul{margin:0;padding-left:20px;line-height:1.55}
+.prompt-box{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#f8f7f4}
+.prompt-text{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.45}
+#dragOverlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(34,51,74,.88);color:#fff;align-items:center;justify-content:center;font-size:1.5rem;font-weight:750;pointer-events:none}
+#dragOverlay.show{display:flex}
+#printArea{display:none}
+@media(max-width:900px){.grid-2,.guide{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}.preview-grid{grid-template-columns:1fr}}
+@media print{
+ html,body{background:#fff!important}
+ body>#dragOverlay,body>main{display:none!important}
+ #printArea{display:block!important}
+ .print-page{width:var(--pagew);height:var(--pageh);padding:.25in .25in .28in;display:flex;flex-direction:column;break-after:page;page-break-after:always;overflow:hidden;background:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+ .print-page:last-child{break-after:auto;page-break-after:auto}
+ .print-header{min-height:.34in;display:flex;justify-content:space-between;align-items:center;font-size:12pt;color:#333;margin-bottom:.04in}
+ .print-header .right{font-weight:700}
+ .print-image-wrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+ .print-image-wrap img{width:100%;height:100%;object-fit:contain;display:block;background:#fff}
+ .print-footer{min-height:.22in;margin-top:.04in;color:#666;font-size:9pt;text-align:center}
+}
+</style>
+<style id="pageStyle">@page{size:letter portrait;margin:0}</style>
+</head>
+<body>
+<div id="dragOverlay">Drop image anywhere</div>
+<main>
+<h1>Value Shapes Practice <span style="font-size:.5em;color:#777;font-weight:600;vertical-align:middle;">Blur Trainer</span></h1>
+<p class="sub">Find a reference, paste or drop it in, optionally crop it, generate a blur progression, preview it, then print one stage per page for paper practice. Built to be easy on desktop and iPad.</p>
+
+<section class="panel">
+  <div id="dropZone" class="drop-zone">
+    <strong>Drop an image here - or anywhere on the page</strong>
+    <small>Desktop: Ctrl+V can paste a screenshot. iPad: tap <strong>Choose image</strong> and pick from Photos.</small>
+    <div class="row big-actions" style="justify-content:center;margin-top:14px">
+      <label for="fileInput" class="button-link primary-file">Choose image</label>
+      <a class="button-link" href="#referenceIdeas">Find a reference</a>
+      <button id="clearBtn" type="button" disabled>Clear</button>
+    </div>
+    <input id="fileInput" class="native-file-input" type="file" accept="image/*" />
+  </div>
+</section>
+
+<section class="panel">
+<div class="grid-2">
+  <div>
+    <h2 class="section-title">1) Crop (optional)</h2>
+    <div class="crop-stage">
+      <div class="canvas-wrap"><canvas id="cropCanvas" width="900" height="640"></canvas></div>
+      <div class="crop-note">Drag on the image to set a crop rectangle. If you do nothing, the full image is used.</div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="resetCropBtn" type="button" disabled>Use full image</button>
+      <button id="centerCropBtn" type="button" disabled>Centered crop</button>
+    </div>
+  </div>
+  <div>
+    <h2 class="section-title">Source info</h2>
+    <div class="app-note">
+      <div id="sourceName"><strong>No image loaded yet</strong></div>
+      <div id="sourceMeta" class="source-meta muted small" style="margin-top:8px">Once you add an image, details appear here.</div>
+      <div class="small muted" style="margin-top:10px">Everything runs locally in your browser. The image is not uploaded anywhere by this tool.</div>
+    </div>
+    <div class="app-note" style="margin-top:12px">
+      <strong>Easy iPad flow</strong>
+      <div class="small muted" style="margin-top:6px;line-height:1.5">Safari/Pexels -> screenshot or save image -> Photos -> Choose image -> crop if needed -> Print / Save PDF.</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="panel">
+<h2 class="section-title">2) Blur settings</h2>
+<div class="grid-4">
+  <label class="field">Number of stages
+    <select id="stageCount"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option></select>
+    <span class="help">Each stage gets its own full page.</span>
+  </label>
+  <label class="field">Starting preset
+    <select id="preset"><option value="recommended" selected>Recommended default</option><option value="strong">Stronger separation</option><option value="gentle">Gentler progression</option><option value="custom">Custom / manual</option></select>
+    <span class="help">You can adjust each stage below.</span>
+  </label>
+  <label class="field">Reference appearance
+    <select id="appearance"><option value="grayscale" selected>Black & white</option><option value="color">Keep original color</option></select>
+    <span class="help">B&W is usually best for value-shape practice.</span>
+  </label>
+  <label class="field">Print orientation
+    <select id="orientation"><option value="auto" selected>Auto from image</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select>
+    <span class="help">All pages use the same orientation.</span>
+  </label>
+</div>
+<label class="checkline"><input id="sharpFinal" type="checkbox" checked /> Keep final stage completely sharp</label>
+<details open>
+  <summary>Fine-tune the blur progression</summary>
+  <div id="sliders" class="sliders"></div>
+  <div class="small muted" style="margin-top:8px">Blur uses a simple 0-100% scale. 0% means sharp. Recommended 4-stage default: 30 / 15 / 8 / 0.</div>
+</details>
+</section>
+
+<section class="panel">
+<div class="row space" style="margin-bottom:12px">
+  <h2 class="section-title" style="margin:0">3) Preview and print</h2>
+  <div class="row"><button id="regenerateBtn" type="button" disabled>Regenerate</button><button id="printBtn" class="primary" type="button" disabled>Print / Save as PDF</button></div>
+</div>
+<div id="previewGrid" class="preview-grid"><div class="empty">Add an image to create the blur sequence.</div></div>
+<div id="status" class="small muted" style="margin-top:10px"></div>
+</section>
+
+<section class="panel">
+<details id="referenceIdeas" open>
+<summary>Reference ideas, prompts, and what makes a good image</summary>
+<div class="guide">
+  <div><h3>Usually works well</h3><ul><li>3-6 big value masses still read when you squint.</li><li>Clear side lighting or one obvious light source.</li><li>Simple background and one main subject.</li><li>Large overlapping forms rather than tiny details.</li><li>Portraits with simple lighting.</li><li>Figures with a readable gesture and strong silhouette.</li></ul></div>
+  <div><h3>Usually less helpful</h3><ul><li>Busy patterns, foliage, crowds, text-heavy screenshots.</li><li>Very flat lighting.</li><li>Multiple competing light sources.</li><li>Images that depend on tiny details.</li><li>Noisy backgrounds or patterned clothing.</li></ul></div>
+</div>
+<div class="prompt-box">
+  <div class="grid-4">
+    <label class="field">Prompt type
+      <select id="promptType"><option value="mixed" selected>Surprise me</option><option value="stilllife">Still life</option><option value="portrait">Portrait / face</option><option value="figure">Figure</option><option value="interior">Interior / simple space</option></select>
+    </label>
+    <label class="field" style="grid-column:span 3">Or write your own search
+      <textarea id="ownPrompt" placeholder="Example: black and white portrait side lighting simple background"></textarea>
+    </label>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <button id="randomPromptBtn" type="button">Suggest a random prompt</button>
+    <button id="useOwnPromptBtn" type="button">Use my typed prompt</button>
+    <a id="searchPexelsLink" class="button-link primary-file"
+       href="https://www.pexels.com/search/black%20and%20white%20still%20life%20teapot%20fruit%20dark%20background%20side%20lighting/"
+       target="_blank" rel="noopener">Search Pexels for this prompt</a>
+    <button id="copyPromptBtn" type="button">Copy prompt</button>
+  </div>
+  <div class="small muted" style="margin-top:10px">Use the suggested prompt, ask for another one, or type your own. Then tap “Search Pexels for this prompt.”</div>
+  <div id="promptText" class="prompt-text">black and white still life teapot fruit dark background side lighting</div>
+</div>
+</details>
+</section>
+</main>
+
+<div id="printArea" aria-hidden="true"></div>
+
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const els={
+ fileInput:$('fileInput'),clearBtn:$('clearBtn'),dropZone:$('dropZone'),dragOverlay:$('dragOverlay'),
+ cropCanvas:$('cropCanvas'),resetCropBtn:$('resetCropBtn'),centerCropBtn:$('centerCropBtn'),
+ sourceName:$('sourceName'),sourceMeta:$('sourceMeta'),stageCount:$('stageCount'),preset:$('preset'),appearance:$('appearance'),
+ orientation:$('orientation'),sharpFinal:$('sharpFinal'),sliders:$('sliders'),previewGrid:$('previewGrid'),regenerateBtn:$('regenerateBtn'),
+ printBtn:$('printBtn'),status:$('status'),printArea:$('printArea'),pageStyle:$('pageStyle'),promptType:$('promptType'),
+ ownPrompt:$('ownPrompt'),randomPromptBtn:$('randomPromptBtn'),copyPromptBtn:$('copyPromptBtn'),useOwnPromptBtn:$('useOwnPromptBtn'),
+ searchPexelsLink:$('searchPexelsLink'),promptText:$('promptText')
+};
+
+const promptBanks={
+ stilllife:[
+  'black and white still life teapot fruit dark background side lighting',
+  'single mug on table dramatic side light simple background',
+  'pear and bowl high contrast still life soft side lighting',
+  'scissors on light surface top view simple shadow',
+  'bottle and cup still life one light source neutral background'
+ ],
+ portrait:[
+  'black and white portrait one person side lighting simple background',
+  'portrait face dramatic window light plain dark background',
+  'elderly face black and white strong value shapes',
+  'woman portrait soft side light uncluttered background',
+  'man portrait single light source simple shadows'
+ ],
+ figure:[
+  'single standing figure strong silhouette side lighting plain background',
+  'seated figure black and white simple studio light',
+  'person sitting by window high contrast simple shape',
+  'figure gesture one person dramatic lighting uncluttered background',
+  'dancer pose simple silhouette side light'
+ ],
+ interior:[
+  'chair by window simple interior strong light shadow',
+  'lamp on desk dark room one light source',
+  'simple room doorway high contrast black and white',
+  'interior window light geometric shadows minimal furniture',
+  'single chair empty room side lighting'
+ ]
+};
+promptBanks.mixed=[...promptBanks.stilllife,...promptBanks.portrait,...promptBanks.figure,...promptBanks.interior];
+
+const presets={
+ recommended:{3:[30,8,0],4:[30,15,8,0],5:[30,20,12,6,0],6:[30,22,15,10,5,0]},
+ strong:{3:[50,18,0],4:[55,30,12,0],5:[60,38,22,10,0],6:[62,44,28,16,8,0]},
+ gentle:{3:[20,6,0],4:[22,12,5,0],5:[24,16,10,4,0],6:[26,18,12,8,4,0]}
+};
+
+const state={sourceFile:null,sourceURL:null,sourceImg:null,stageURLs:[],renderVersion:0,dragDepth:0,cropNatural:null,drawingCrop:false,dragStart:null,displayImageRect:null};
+
+function esc(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function setStatus(t){els.status.textContent=t||'';}
+function values(){return [...els.sliders.querySelectorAll('input[type="range"]')].map(x=>Number(x.value));}
+function revokeStages(){state.stageURLs.forEach(URL.revokeObjectURL);state.stageURLs=[];}
+
+function buildSliders(v){
+ const n=Number(els.stageCount.value);
+ if(!v){const k=els.preset.value==='custom'?'recommended':els.preset.value;v=(presets[k][n]||presets.recommended[n]).slice();}
+ v=v.slice(0,n);while(v.length<n)v.push(0);if(els.sharpFinal.checked)v[n-1]=0;
+ els.sliders.innerHTML='';
+ v.forEach((val,i)=>{
+  const row=document.createElement('div');row.className='slider-row';
+  row.innerHTML=`<div class="label">Stage ${i+1}</div><input type="range" min="0" max="100" step="1" value="${Math.round(val)}" ${els.sharpFinal.checked&&i===n-1?'disabled':''}><div class="readout"><span>${Math.round(val)}</span>% blur</div>`;
+  const s=row.querySelector('input'),r=row.querySelector('.readout span');
+  s.addEventListener('input',()=>{r.textContent=Math.round(Number(s.value));els.preset.value='custom';schedule();});
+  els.sliders.appendChild(row);
+ });
+}
+function applyPreset(){if(els.preset.value==='custom')return;buildSliders(presets[els.preset.value][Number(els.stageCount.value)]);schedule();}
+
+function clearAll(){
+ state.renderVersion++;revokeStages();if(state.sourceURL)URL.revokeObjectURL(state.sourceURL);
+ Object.assign(state,{sourceFile:null,sourceURL:null,sourceImg:null,cropNatural:null});
+ els.sourceName.innerHTML='<strong>No image loaded yet</strong>';els.sourceMeta.textContent='Once you add an image, details appear here.';
+ els.previewGrid.innerHTML='<div class="empty">Add an image to create the blur sequence.</div>';els.printArea.innerHTML='';els.fileInput.value='';
+ [els.clearBtn,els.regenerateBtn,els.printBtn,els.resetCropBtn,els.centerCropBtn].forEach(b=>b.disabled=true);
+ setStatus('');drawCrop();
+}
+
+function handleFile(file){
+ if(!file||!file.type.startsWith('image/')){setStatus('Please choose a PNG, JPG/JPEG, or WEBP image.');return;}
+ if(state.sourceURL)URL.revokeObjectURL(state.sourceURL);
+ state.sourceFile=file;state.sourceURL=URL.createObjectURL(file);
+ const img=new Image();
+ img.onload=()=>{
+  state.sourceImg=img;state.cropNatural=null;
+  els.sourceName.innerHTML=`<strong>${esc(file.name||'Pasted image')}</strong>`;
+  els.sourceMeta.textContent=`${img.naturalWidth} x ${img.naturalHeight} px`;
+  [els.clearBtn,els.regenerateBtn,els.printBtn,els.resetCropBtn,els.centerCropBtn].forEach(b=>b.disabled=false);
+  orient();drawCrop();generate();
+ };
+ img.onerror=()=>setStatus('This image could not be read.');
+ img.src=state.sourceURL;
+}
+
+function dims(){if(!state.sourceImg)return null;return state.cropNatural?{width:state.cropNatural.w,height:state.cropNatural.h}:{width:state.sourceImg.naturalWidth,height:state.sourceImg.naturalHeight};}
+function orient(){
+ let o=els.orientation.value,d=dims();if(o==='auto'&&d)o=d.width/d.height>1.12?'landscape':'portrait';
+ if(o==='landscape'){document.documentElement.style.setProperty('--pagew','11in');document.documentElement.style.setProperty('--pageh','8.5in');els.pageStyle.textContent='@page{size:letter landscape;margin:0}';}
+ else{document.documentElement.style.setProperty('--pagew','8.5in');document.documentElement.style.setProperty('--pageh','11in');els.pageStyle.textContent='@page{size:letter portrait;margin:0}';}
+}
+function centeredCrop(){
+ const i=state.sourceImg;if(!i)return null;const ix=i.naturalWidth*.08,iy=i.naturalHeight*.08;
+ return{x:Math.round(ix),y:Math.round(iy),w:Math.round(i.naturalWidth-2*ix),h:Math.round(i.naturalHeight-2*iy)};
+}
+function drawCrop(){
+ const c=els.cropCanvas,ctx=c.getContext('2d'),w=c.clientWidth||900,h=Math.min(innerHeight*.62,640),dpr=devicePixelRatio||1;
+ c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);ctx.setTransform(1,0,0,1,0,0);ctx.scale(dpr,dpr);ctx.fillStyle='#efede6';ctx.fillRect(0,0,w,h);state.displayImageRect=null;
+ if(!state.sourceImg){ctx.fillStyle='#777';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='16px system-ui';ctx.fillText('Add an image to preview and crop it here.',w/2,h/2);return;}
+ const i=state.sourceImg,p=14,s=Math.min((w-2*p)/i.naturalWidth,(h-2*p)/i.naturalHeight),dw=i.naturalWidth*s,dh=i.naturalHeight*s,dx=(w-dw)/2,dy=(h-dh)/2;
+ state.displayImageRect={x:dx,y:dy,w:dw,h:dh,scale:s};ctx.drawImage(i,dx,dy,dw,dh);
+ if(state.cropNatural){
+  const cr=state.cropNatural,rx=dx+cr.x*s,ry=dy+cr.y*s,rw=cr.w*s,rh=cr.h*s;
+  ctx.save();ctx.fillStyle='rgba(0,0,0,.42)';ctx.fillRect(dx,dy,dw,dh);ctx.clearRect(rx,ry,rw,rh);ctx.restore();
+  ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.strokeRect(rx,ry,rw,rh);
+ }
+}
+function point(evt){const r=els.cropCanvas.getBoundingClientRect(),src=evt.touches?evt.touches[0]:evt;return{x:src.clientX-r.left,y:src.clientY-r.top};}
+function clamp(p){const r=state.displayImageRect;if(!r)return p;return{x:Math.max(r.x,Math.min(r.x+r.w,p.x)),y:Math.max(r.y,Math.min(r.y+r.h,p.y))};}
+function nat(a,b){const r=state.displayImageRect,x1=Math.min(a.x,b.x),y1=Math.min(a.y,b.y),x2=Math.max(a.x,b.x),y2=Math.max(a.y,b.y);if(x2-x1<12||y2-y1<12)return null;return{x:Math.round((x1-r.x)/r.scale),y:Math.round((y1-r.y)/r.scale),w:Math.round((x2-x1)/r.scale),h:Math.round((y2-y1)/r.scale)};}
+function cropStart(e){if(!state.sourceImg||!state.displayImageRect)return;e.preventDefault();state.drawingCrop=true;state.dragStart=clamp(point(e));}
+function cropMove(e){if(!state.drawingCrop)return;e.preventDefault();state.cropNatural=nat(state.dragStart,clamp(point(e)));orient();drawCrop();}
+function cropEnd(e){if(!state.drawingCrop)return;if(e)e.preventDefault();state.drawingCrop=false;state.dragStart=null;generate();}
+
+function baseCanvas(){
+ const i=state.sourceImg,maxLong=4096,cr=state.cropNatural||{x:0,y:0,w:i.naturalWidth,h:i.naturalHeight},s=Math.min(1,maxLong/Math.max(cr.w,cr.h)),w=Math.max(1,Math.round(cr.w*s)),h=Math.max(1,Math.round(cr.h*s));
+ const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d',{alpha:false});x.fillStyle='#fff';x.fillRect(0,0,w,h);x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';if(els.appearance.value==='grayscale')x.filter='grayscale(1)';x.drawImage(i,cr.x,cr.y,cr.w,cr.h,0,0,w,h);x.filter='none';return c;
+}
+function padEdges(base,pad){
+ const c=document.createElement('canvas');c.width=base.width+pad*2;c.height=base.height+pad*2;const x=c.getContext('2d',{alpha:false}),w=base.width,h=base.height;x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(base,pad,pad);
+ x.drawImage(base,0,0,w,1,pad,0,w,pad);x.drawImage(base,0,h-1,w,1,pad,pad+h,w,pad);x.drawImage(base,0,0,1,h,0,pad,pad,h);x.drawImage(base,w-1,0,1,h,pad+w,pad,pad,h);return c;
+}
+function blobURL(c){return new Promise((res,rej)=>c.toBlob(b=>b?res(URL.createObjectURL(b)):rej(new Error('render')),'image/png'));}
+async function blur(base,strength){
+ if(strength<=0)return blobURL(base);
+ const radius=Math.max(1,(strength/100)*.07*Math.max(base.width,base.height)),pad=Math.min(Math.ceil(radius*2.3),Math.round(Math.max(base.width,base.height)*.22)),p=padEdges(base,pad);
+ const b=document.createElement('canvas');b.width=p.width;b.height=p.height;const bx=b.getContext('2d',{alpha:false});bx.fillStyle='#fff';bx.fillRect(0,0,b.width,b.height);bx.filter=`blur(${radius.toFixed(1)}px)`;bx.drawImage(p,0,0);bx.filter='none';
+ const o=document.createElement('canvas');o.width=base.width;o.height=base.height;const ox=o.getContext('2d',{alpha:false});ox.fillStyle='#fff';ox.fillRect(0,0,o.width,o.height);ox.drawImage(b,pad,pad,base.width,base.height,0,0,base.width,base.height);return blobURL(o);
+}
+function preview(v){els.previewGrid.innerHTML='';state.stageURLs.forEach((u,i)=>{const d=document.createElement('div');d.className='preview-card';d.innerHTML=`<div class="preview-head"><strong>Stage ${i+1}</strong><span>${Math.round(v[i])}% blur</span></div><img src="${u}" alt="Stage ${i+1}">`;els.previewGrid.appendChild(d);});}
+function printPages(v){
+ els.printArea.innerHTML='';const name=state.sourceFile?state.sourceFile.name:'reference image';
+ state.stageURLs.forEach((u,i)=>{const p=document.createElement('div');p.className='print-page';p.innerHTML=`<div class="print-header"><div>${esc(name)}</div><div class="right">Stage ${i+1} · ${Math.round(v[i])}% blur</div></div><div class="print-image-wrap"><img src="${u}"></div><div class="print-footer">Value Shapes Practice</div>`;els.printArea.appendChild(p);});
+}
+async function generate(){
+ if(!state.sourceImg)return;const ver=++state.renderVersion;els.regenerateBtn.disabled=true;setStatus('Generating previews...');revokeStages();orient();const base=baseCanvas(),v=values(),urls=[];
+ try{for(const n of v){const u=await blur(base,n);if(ver!==state.renderVersion){urls.forEach(URL.revokeObjectURL);return;}urls.push(u);}state.stageURLs=urls;preview(v);printPages(v);els.regenerateBtn.disabled=false;setStatus('Ready.');}
+ catch(e){console.error(e);setStatus('Something went wrong while generating the blur sequence.');els.regenerateBtn.disabled=false;}
+}
+let timer=null;function schedule(){if(!state.sourceImg)return;clearTimeout(timer);timer=setTimeout(generate,150);}
+function updatePexelsLink(){
+ const q=encodeURIComponent(els.promptText.textContent.trim()||'drawing reference');
+ els.searchPexelsLink.href=`https://www.pexels.com/search/${q}/`;
+}
+function randomPrompt(){
+ const pool=promptBanks[els.promptType.value]||promptBanks.mixed;
+ els.promptText.textContent=pool[Math.floor(Math.random()*pool.length)];
+ updatePexelsLink();
+ return els.promptText.textContent;
+}
+
+els.fileInput.onchange=e=>handleFile(e.target.files[0]);
+els.clearBtn.onclick=clearAll;
+els.resetCropBtn.onclick=()=>{state.cropNatural=null;drawCrop();orient();generate();};
+els.centerCropBtn.onclick=()=>{state.cropNatural=centeredCrop();drawCrop();orient();generate();};
+els.stageCount.onchange=()=>{buildSliders();schedule();};
+els.preset.onchange=applyPreset;
+els.appearance.onchange=schedule;
+els.orientation.onchange=()=>{orient();printPages(values());};
+els.sharpFinal.onchange=()=>{buildSliders(values());schedule();};
+els.regenerateBtn.onclick=generate;
+els.printBtn.onclick=()=>window.print();
+els.randomPromptBtn.onclick=randomPrompt;
+els.copyPromptBtn.onclick=()=>navigator.clipboard.writeText(els.promptText.textContent).then(()=>setStatus('Prompt copied.'));
+els.useOwnPromptBtn.onclick=()=>{
+ const t=els.ownPrompt.value.trim();
+ if(t){els.promptText.textContent=t;updatePexelsLink();setStatus('Using your prompt.');}
+ else{setStatus('Type a prompt first, or use the suggested one.');}
+};
+els.promptType.onchange=randomPrompt;
+
+document.addEventListener('paste',e=>{const item=[...(e.clipboardData?.items||[])].find(i=>i.type?.startsWith('image/'));if(item){const f=item.getAsFile();if(f){handleFile(f);e.preventDefault();}}});
+document.addEventListener('dragover',e=>{e.preventDefault();els.dragOverlay.classList.add('show');});
+document.addEventListener('dragleave',e=>{if(e.target===document.documentElement||e.target===document.body)els.dragOverlay.classList.remove('show');});
+document.addEventListener('drop',e=>{e.preventDefault();els.dragOverlay.classList.remove('show');const f=[...e.dataTransfer.files].find(f=>f.type.startsWith('image/'));if(f)handleFile(f);});
+
+els.cropCanvas.addEventListener('mousedown',cropStart);window.addEventListener('mousemove',cropMove);window.addEventListener('mouseup',cropEnd);
+els.cropCanvas.addEventListener('touchstart',cropStart,{passive:false});window.addEventListener('touchmove',cropMove,{passive:false});window.addEventListener('touchend',cropEnd,{passive:false});
+window.addEventListener('resize',drawCrop);
+
+buildSliders();drawCrop();randomPrompt();
+})();
+</script>
+</body>
+</html>
