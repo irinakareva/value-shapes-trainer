@@ -1,16 +1,12 @@
-VALUE SHAPES PRACTICE - BLUR TRAINER v3
+VALUE SHAPES PRACTICE - BLUR TRAINER v6
 
-This folder is ready for GitHub Pages.
+Main changes:
+- Rebuilt cropper using the actual image plus an overlay (no canvas redraw/white-cover bug).
+- Crop can be created, moved, and resized with corner handles using mouse, finger, or Apple Pencil.
+- Tap any blur preview to open a true full-screen reference viewer.
+- Swipe left/right anywhere on the full-screen image area to move through stages.
+- Stage dots and arrow buttons are also available.
+- Print / Save PDF remains available.
+- Default progression remains 30 / 15 / 8 / 0.
 
-Pexels flow:
-1. Choose a category (or Surprise me).
-2. Tap "Suggest a random prompt" OR type your own and tap "Use my typed prompt".
-3. Tap "Search Pexels for this prompt".
-Nothing opens automatically before you tap the search link.
-
-Recommended blur default: 30 / 15 / 8 / 0.
-
-Why host it:
-On iPad, local .html files opened from Files/Downloads/Library may use Quick Look rather
-than a full browser context. Interactive controls can fail there. GitHub Pages gives you
-a normal Safari URL, which is the reliable iPad workflow.
+GitHub update: replace the repository root index.html with this index.html, commit, and push.
